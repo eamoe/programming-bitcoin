@@ -40,18 +40,21 @@ class FieldElement:
         return self.__class__(num, self.prime)
 
     def __mul__(self, other):
+        # Ensure that the elements are from the same finite field.
         if self.prime != other.prime:
             raise TypeError('Cannot multiply two numbers in different Fields')
-        # self.num and other.num are the actual values
-        # self.prime is what we need to mod against
+        # Multiplication in a finite field is defined with the modulo operator.
         num = (self.num * other.num) % self.prime
-        # We return an element of the same class
+        # Using self.__class__ instead of FieldElement makes the method easily inheritable.
         return self.__class__(num, self.prime)
 
     def __pow__(self, exponent):
+        # Apply Fermat’s Little Theorem: n^(p-1) % p = 1
         n = exponent % (self.prime - 1)
         num = pow(self.num, n, self.prime)
+        # Using self.__class__ instead of FieldElement makes the method easily inheritable.
         return self.__class__(num, self.prime)
+
 
     def __truediv__(self, other):
         if self.prime != other.prime:
