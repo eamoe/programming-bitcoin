@@ -22,21 +22,21 @@ class FieldElement:
         return not (self == other)
 
     def __add__(self, other):
+        # Ensure that the elements are from the same finite field.
         if self.prime != other.prime:
             raise TypeError('Cannot add two numbers in different Fields')
-        # self.num and other.num are the actual values
-        # self.prime is what we need to mod against
+        # Addition in a finite field is defined with the modulo operator.
         num = (self.num + other.num) % self.prime
-        # We return an element of the same class
+        # Using self.__class__ instead of FieldElement makes the method easily inheritable.
         return self.__class__(num, self.prime)
 
     def __sub__(self, other):
+        # Ensure that the elements are from the same finite field.
         if self.prime != other.prime:
             raise TypeError('Cannot subtract two numbers in different Fields')
-        # self.num and other.num are the actual values
-        # self.prime is what we need to mod against
+        # Subtraction in a finite field is defined with the modulo operator.
         num = (self.num - other.num) % self.prime
-        # We return an element of the same class
+        # Using self.__class__ instead of FieldElement makes the method easily inheritable.
         return self.__class__(num, self.prime)
 
     def __mul__(self, other):
