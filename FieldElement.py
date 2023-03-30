@@ -1,10 +1,11 @@
 class FieldElement:
 
     def __init__(self, num, prime):
+        # Check that num is between 0 and prime-1 inclusive.
         if num >= prime or num < 0:
-            error = 'Num {} not in field range 0 to {}'.format(
-                num, prime - 1)
+            error = 'Num {} not in field range 0 to {}'.format(num, prime - 1)
             raise ValueError(error)
+        # Assign the initialization values to the object.
         self.num = num
         self.prime = prime
 
