@@ -1,5 +1,5 @@
 from unittest import TestCase
-from Signature import Signature
+from Signature.Signature import Signature
 from random import randint
 
 class SignatureTest(TestCase):

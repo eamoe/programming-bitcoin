@@ -1,5 +1,5 @@
 from unittest import TestCase
-from PrivateKey import PrivateKey
+from PrivateKey.PrivateKey import PrivateKey
 from random import randint
 from constants import N
 

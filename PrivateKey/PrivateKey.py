@@ -1,4 +1,4 @@
-from Signature import Signature
+from Signature.Signature import Signature
 from constants import G, N
 import hashlib
 import hmac

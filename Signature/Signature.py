@@ -9,7 +9,6 @@ class Signature:
     def __repr__(self):
         return 'Signature({:x},{:x})'.format(self.r, self.s)
 
-    # tag::source4[]
     def der(self):
         rbin = self.r.to_bytes(32, byteorder='big')
         # remove all null bytes at the beginning
@@ -26,7 +25,6 @@ class Signature:
             sbin = b'\x00' + sbin
         result += bytes([2, len(sbin)]) + sbin
         return bytes([0x30, len(result)]) + result
-    # end::source4[]
 
     @classmethod
     def parse(cls, signature_bin):
