@@ -76,6 +76,7 @@ class Point:
             return self.__class__(x, y, self.a, self.b)
 
 
+    # Perform multiplication using the binary expansion technique
     def __rmul__(self, coefficient):
         coef = coefficient
         current = self
