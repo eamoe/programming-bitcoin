@@ -1,4 +1,4 @@
-from FieldElement import FieldElement
+from FiniteField.FieldElement import FieldElement
 
 class Point:
 

@@ -1,4 +1,4 @@
-from FieldElement import *
+from FiniteField.FieldElement import *
 
 import constants
 

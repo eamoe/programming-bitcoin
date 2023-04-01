@@ -1,19 +1,19 @@
-from FieldElement import FieldElement
-from Point import Point
+from FiniteField.FieldElement import FieldElement
+from EllipticCurve.Point import Point
 import constants
 # print(constants.N * constants.G)
 from helper import run
-from FieldElement_test import *
+from FiniteField.FieldElement_test import *
 
-from Point import *
+from EllipticCurve.Point import *
 
 a = Point(-1, -1, 5, 7)
 a2 = a + a
 
 a = FieldElement(3, 4)
-print(a)
+# print(a)
 
-run(FieldElementTest("test_ne"))
+# run(FieldElementTest("test_ne"))
 
 
 prime = 223
@@ -25,4 +25,11 @@ x2 = FieldElement(num=17, prime=prime)
 y2 = FieldElement(num=56, prime=prime)
 p1 = Point(x1, y1, a, b)
 p2 = Point(x2, y2, a, b)
-print(p1 + p2)
+# print(p1 + p2)
+
+# print(constants.G + constants.G)
+
+print(constants.N)
+print(constants.P)
+print(constants.P - constants.N)
+print(pow(2, 32))

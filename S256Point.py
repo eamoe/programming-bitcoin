@@ -1,5 +1,5 @@
 from S256Field import *
-from Point import *
+from EllipticCurve.Point import *
 from helper import encode_base58_checksum, hash160
 import constants
 

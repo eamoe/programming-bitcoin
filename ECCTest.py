@@ -1,6 +1,6 @@
 from unittest import TestCase
-from FieldElement import *
-from Point import *
+from FiniteField.FieldElement import *
+from EllipticCurve.Point import *
 
 class ECCTest(TestCase):
 
