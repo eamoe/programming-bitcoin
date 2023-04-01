@@ -55,7 +55,6 @@ class FieldElement:
         # Using self.__class__ instead of FieldElement makes the method easily inheritable.
         return self.__class__(num, self.prime)
 
-
     def __truediv__(self, other):
         if self.prime != other.prime:
             raise TypeError('Cannot divide two numbers in different Fields')

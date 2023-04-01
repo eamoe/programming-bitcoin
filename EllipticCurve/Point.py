@@ -57,7 +57,6 @@ class Point:
             x = s**2 - self.x - other.x
             y = s * (self.x - x) - self.y
             return self.__class__(x, y, self.a, self.b)
-        
         # Case 4: if we are tangent to the vertical line,
         # we return the point at infinity
         # note instead of figuring out what 0 is for each type
@@ -74,7 +73,6 @@ class Point:
             x = s**2 - 2 * self.x
             y = s * (self.x - x) - self.y
             return self.__class__(x, y, self.a, self.b)
-
 
     # Perform multiplication using the binary expansion technique
     def __rmul__(self, coefficient):

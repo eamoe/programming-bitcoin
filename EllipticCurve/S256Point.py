@@ -10,6 +10,8 @@ class S256Point(Point):
         a, b = S256Field(constants.A), S256Field(constants.B)
         if type(x) == int:
             super().__init__(x=S256Field(x), y=S256Field(y), a=a, b=b)
+        # If point is initialized with the point at infinity,
+        # it needs to let x and y through directly instead of using the S256Field class
         else:
             super().__init__(x=x, y=y, a=a, b=b)
 
@@ -20,8 +22,10 @@ class S256Point(Point):
             return 'S256Point({}, {})'.format(self.x, self.y)
 
     def __rmul__(self, coefficient):
+        # Mod by n because nG = 0
         coef = coefficient % constants.N
         return super().__rmul__(coef)
+
 
     def verify(self, z, sig):
         # By Fermat's Little Theorem, 1/s = pow(s, N-2, N)
@@ -34,7 +38,6 @@ class S256Point(Point):
         total = u * constants.G + v * self
         return total.x.num == sig.r
 
-    # tag::source1[]
     def sec(self, compressed=True):
         '''returns the binary version of the SEC format'''
         if compressed:
@@ -45,9 +48,7 @@ class S256Point(Point):
         else:
             return b'\x04' + self.x.num.to_bytes(32, 'big') + \
                 self.y.num.to_bytes(32, 'big')
-    # end::source1[]
-
-    # tag::source5[]
+ 
     def hash160(self, compressed=True):
         return hash160(self.sec(compressed))
 
@@ -59,9 +60,7 @@ class S256Point(Point):
         else:
             prefix = b'\x00'
         return encode_base58_checksum(prefix + h160)
-    # end::source5[]
-
-    # tag::source3[]
+    
     @classmethod
     def parse(self, sec_bin):
         '''returns a Point object from a SEC binary (not hex)'''
@@ -85,4 +84,3 @@ class S256Point(Point):
             return S256Point(x, even_beta)
         else:
             return S256Point(x, odd_beta)
-    # end::source3[]

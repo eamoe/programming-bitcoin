@@ -13,7 +13,5 @@ class S256Field(FieldElement):
         # Display a 256-bit number consistently by filling 64 characters to see any leading zeros
         return '{:x}'.format(self.num).zfill(64)
 
-    # tag::source2[]
     def sqrt(self):
         return self**((constants.P + 1) // 4)
-    # end::source2[]
