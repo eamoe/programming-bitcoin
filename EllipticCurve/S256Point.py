@@ -1,8 +1,9 @@
-from S256Field import *
+from FiniteField.S256Field import *
 from EllipticCurve.Point import *
 from helper import encode_base58_checksum, hash160
 import constants
 
+# Redefine Point class for working with secp256k1 curve
 class S256Point(Point):
 
     def __init__(self, x, y, a=None, b=None):

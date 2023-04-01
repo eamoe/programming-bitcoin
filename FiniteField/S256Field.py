@@ -2,6 +2,7 @@ from FiniteField.FieldElement import *
 
 import constants
 
+# Redefine FieldElement class for working with secp256k1 curve
 class S256Field(FieldElement):
 
     def __init__(self, num, prime=None):

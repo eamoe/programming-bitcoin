@@ -1,6 +1,6 @@
 from unittest import TestCase
 from constants import N, G
-from S256Point import S256Point
+from EllipticCurve.S256Point import S256Point
 from Signature import *
 
 class S256Test(TestCase):

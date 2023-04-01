@@ -1,4 +1,4 @@
-from S256Point import S256Point
+from EllipticCurve.S256Point import S256Point
 
 # Specify the a and b of the curve y^2 = x^3 + a*x + b
 A = 0
