@@ -3,27 +3,25 @@ from FieldElement import FieldElement
 class Point:
 
     def __init__(self, x, y, a, b):
+        # Elliptic curve has the form y^2 = x^3 + a*x + b
         self.a = a
         self.b = b
         self.x = x
         self.y = y
-        # x being None and y being None represents the point at infinity
-        # Check for that here since the equation below won't make sense
-        # with None values for both.
+        # The x coordinate and y coordinate being None is how the point at infinity is signified
         if self.x is None and self.y is None:
             return
-        # make sure that the elliptic curve equation is satisfied
-        # y**2 == x**3 + a*x + b
+        # Check if the point is on the curve
         if self.y**2 != self.x**3 + a * x + b:
-            # if not, throw a ValueError
             raise ValueError('({}, {}) is not on the curve'.format(x, y))
 
     def __eq__(self, other):
+        # Points are equal if and only if they are on the same curve and have the same coordinates
         return self.x == other.x and self.y == other.y \
             and self.a == other.a and self.b == other.b
 
     def __ne__(self, other):
-        # this should be the inverse of the == operator
+        # Define the not operator
         return not (self == other)
 
     def __repr__(self):
@@ -35,6 +33,7 @@ class Point:
         else:
             return 'Point({},{})_{}_{}'.format(self.x, self.y, self.a, self.b)
 
+    # Overload the + operator
     def __add__(self, other):
         if self.a != other.a or self.b != other.b:
             raise TypeError('Points {}, {} are not on the same curve'.format(self, other))
@@ -44,12 +43,10 @@ class Point:
         # Case 0.1: other is the point at infinity, return self
         if other.x is None:
             return self
-
         # Case 1: self.x == other.x, self.y != other.y
         # Result is point at infinity
         if self.x == other.x and self.y != other.y:
             return self.__class__(None, None, self.a, self.b)
-
         # Case 2: self.x ≠ other.x
         # Formula (x3,y3)==(x1,y1)+(x2,y2)
         # s=(y2-y1)/(x2-x1)
@@ -60,14 +57,13 @@ class Point:
             x = s**2 - self.x - other.x
             y = s * (self.x - x) - self.y
             return self.__class__(x, y, self.a, self.b)
-
+        
         # Case 4: if we are tangent to the vertical line,
         # we return the point at infinity
         # note instead of figuring out what 0 is for each type
         # we just use 0 * self.x
         if self == other and self.y == 0 * self.x:
             return self.__class__(None, None, self.a, self.b)
-
         # Case 3: self == other
         # Formula (x3,y3)=(x1,y1)+(x1,y1)
         # s=(3*x1**2+a)/(2*y1)
@@ -78,6 +74,7 @@ class Point:
             x = s**2 - 2 * self.x
             y = s * (self.x - x) - self.y
             return self.__class__(x, y, self.a, self.b)
+
 
     def __rmul__(self, coefficient):
         coef = coefficient
