@@ -1,6 +1,6 @@
 from FiniteField.S256Field import *
 from EllipticCurve.Point import *
-from helper import encode_base58_checksum, hash160
+from Helper.helper import encode_base58_checksum, hash160
 import constants
 
 # Redefine Point class for working with secp256k1 curve
