@@ -1,5 +1,6 @@
 from Helper.helper import (
-    hash256
+    hash256,
+    little_endian_to_int
 )
 
 class Tx:
@@ -37,6 +38,8 @@ class Tx:
     
     # This method has to be a class method as the serialization will return a new instance of a Tx object
     @classmethod
-    def parse(cls, stream):
+    def parse(cls, s, testnet=False):
         # The read method allows to parse on the fly so that it will not need to wait on I/O
-        serialized_version = stream.read(4)
+        version = little_endian_to_int(s.read(4))
+        return cls(version, None, None, None, testnet=testnet)
+        
