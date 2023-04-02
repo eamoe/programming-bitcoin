@@ -8,6 +8,7 @@ class PrivateKey:
 
     def __init__(self, secret):
         self.secret = secret
+        # Keep around the public key, self.point, for convenience
         self.point = secret * G
 
     def hex(self):
@@ -27,6 +28,7 @@ class PrivateKey:
         # Signature(r, s)
         return Signature(r, s)
 
+    # The specification is in RFC 6979
     def deterministic_k(self, z):
         k = b'\x00' * 32
         v = b'\x01' * 32
