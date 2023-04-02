@@ -64,17 +64,18 @@ class S256Point(Point):
     @classmethod
     def parse(self, sec_bin):
         '''returns a Point object from a SEC binary (not hex)'''
-        if sec_bin[0] == 4:  # <1>
+        if sec_bin[0] == 4:
             x = int.from_bytes(sec_bin[1:33], 'big')
             y = int.from_bytes(sec_bin[33:65], 'big')
             return S256Point(x=x, y=y)
-        is_even = sec_bin[0] == 2  # <2>
+        # The evenness of the y coordinate is given in the first byte
+        is_even = sec_bin[0] == 2
         x = S256Field(int.from_bytes(sec_bin[1:], 'big'))
         # right side of the equation y^2 = x^3 + 7
         alpha = x**3 + S256Field(constants.B)
         # solve for left side
-        beta = alpha.sqrt()  # <3>
-        if beta.num % 2 == 0:  # <4>
+        beta = alpha.sqrt()
+        if beta.num % 2 == 0:
             even_beta = beta
             odd_beta = S256Field(constants.P - beta.num)
         else:
