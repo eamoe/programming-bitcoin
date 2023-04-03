@@ -4,7 +4,7 @@ from Tx import Tx
 from TxFetcher import *
 
 class TxTest(TestCase):
-    cache_file = '../tx.cache'
+    cache_file = './tx.cache'
 
     @classmethod
     def setUpClass(cls):
