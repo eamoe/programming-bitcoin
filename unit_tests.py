@@ -5,6 +5,9 @@ from Tests.EllipticCurve.Point_test import *
 from Tests.EllipticCurve.S256_test import *
 from Tests.helper_test import *
 from Tests.Tx_test import *
+from Tests.script_test import *
+from Tests.Signature_test import *
+from Tests.PrivateKey_test import *
 
 unittest.main()
 
