@@ -1,6 +1,8 @@
 from Helper.helper import (
     hash256,
-    little_endian_to_int
+    little_endian_to_int,
+    int_to_little_endian,
+    encode_varint
 )
 
 class Tx:
@@ -27,7 +29,7 @@ class Tx:
             tx_outs,
             self.locktime,
         )
-    
+
     def id(self):
         # Human-readable hexadecimal of the transaction hash
         return self.hash().hex()
@@ -42,61 +44,7 @@ class Tx:
         # The read method allows to parse on the fly so that it will not need to wait on I/O
         version = little_endian_to_int(s.read(4))
         return cls(version, None, None, None, testnet=testnet)
-
-
-
-
-# tag::source1[]
-class Tx:
-
-    def __init__(self, version, tx_ins, tx_outs, locktime, testnet=False):
-        self.version = version
-        self.tx_ins = tx_ins  # <1>
-        self.tx_outs = tx_outs
-        self.locktime = locktime
-        self.testnet = testnet  # <2>
-
-    def __repr__(self):
-        tx_ins = ''
-        for tx_in in self.tx_ins:
-            tx_ins += tx_in.__repr__() + '\n'
-        tx_outs = ''
-        for tx_out in self.tx_outs:
-            tx_outs += tx_out.__repr__() + '\n'
-        return 'tx: {}\nversion: {}\ntx_ins:\n{}tx_outs:\n{}locktime: {}'.format(
-            self.id(),
-            self.version,
-            tx_ins,
-            tx_outs,
-            self.locktime,
-        )
-
-    def id(self):  # <3>
-        '''Human-readable hexadecimal of the transaction hash'''
-        return self.hash().hex()
-
-    def hash(self):  # <4>
-        '''Binary hash of the legacy serialization'''
-        return hash256(self.serialize())[::-1]
-    # end::source1[]
-
-    @classmethod
-    def parse(cls, s, testnet=False):
-        '''Takes a byte stream and parses the transaction at the start
-        return a Tx object
-        '''
-        # s.read(n) will return n bytes
-        # version is an integer in 4 bytes, little-endian
-        # num_inputs is a varint, use read_varint(s)
-        # parse num_inputs number of TxIns
-        # num_outputs is a varint, use read_varint(s)
-        # parse num_outputs number of TxOuts
-        # locktime is an integer in 4 bytes, little-endian
-        # return an instance of the class (see __init__ for args)
-        version = little_endian_to_int(s.read(4))
-        return cls(version, None, None, None, testnet=testnet)
-
-    # tag::source6[]
+    
     def serialize(self):
         '''Returns the byte serialization of the transaction'''
         result = int_to_little_endian(self.version, 4)
@@ -108,8 +56,7 @@ class Tx:
             result += tx_out.serialize()
         result += int_to_little_endian(self.locktime, 4)
         return result
-    # end::source6[]
-
+    
     def fee(self):
         '''Returns the fee of this transaction in satoshi'''
         # initialize input sum and output sum
