@@ -11,25 +11,24 @@ class TxIn:
     def __init__(self, prev_tx, prev_index, script_sig=None, sequence=0xffffffff):
         self.prev_tx = prev_tx
         self.prev_index = prev_index
-        if script_sig is None:  # <1>
+        if script_sig is None:
             self.script_sig = Script()
         else:
             self.script_sig = script_sig
         self.sequence = sequence
+
 
     def __repr__(self):
         return '{}:{}'.format(
             self.prev_tx.hex(),
             self.prev_index,
         )
-    # end::source2[]
 
     @classmethod
     def parse(cls, s, testnet=False):
         version = little_endian_to_int(s.read(4))
         return cls(version, None, None, None, testnet=testnet)
 
-    # tag::source5[]
     def serialize(self):
         '''Returns the byte serialization of the transaction input'''
         result = self.prev_tx[::-1]
@@ -37,9 +36,7 @@ class TxIn:
         result += self.script_sig.serialize()
         result += int_to_little_endian(self.sequence, 4)
         return result
-    # end::source5[]
 
-    # tag::source8[]
     def fetch_tx(self, testnet=False):
         return TxFetcher.fetch(self.prev_tx.hex(), testnet=testnet)
 
@@ -56,4 +53,3 @@ class TxIn:
         '''
         tx = self.fetch_tx(testnet=testnet)
         return tx.tx_outs[self.prev_index].script_pubkey
-    # end::source8[]
