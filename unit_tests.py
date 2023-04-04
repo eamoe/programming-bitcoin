@@ -1,8 +1,8 @@
 import unittest
 
-from Tests.FiniteField.FieldElement_test import *
-from Tests.EllipticCurve.Point_test import *
-from Tests.EllipticCurve.S256_test import *
+from Tests.FieldElement_test import *
+from Tests.Point_test import *
+from Tests.S256_test import *
 from Tests.helper_test import *
 from Tests.Tx_test import *
 from Tests.script_test import *
