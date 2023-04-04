@@ -1,5 +1,4 @@
 from logging import getLogger
-from unittest import TestCase
 
 from Helper.helper import (
     encode_varint,
@@ -36,6 +35,9 @@ class Script:
             else:
                 result.append(cmd.hex())
         return ' '.join(result)
+
+    def __add__(self, other):
+        return Script(self.cmds + other.cmds)
 
     @classmethod
     def parse(cls, s):
