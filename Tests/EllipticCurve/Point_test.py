@@ -1,5 +1,5 @@
 from unittest import TestCase
-from EllipticCurve.Point import Point
+from ecc import Point
 
 class PointTest(TestCase):
 

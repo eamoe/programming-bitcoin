@@ -1,5 +1,5 @@
 from unittest import TestCase
-from FiniteField.FieldElement import FieldElement
+from ecc import FieldElement
 
 class FieldElementTest(TestCase):
 

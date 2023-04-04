@@ -1,6 +1,6 @@
 from unittest import TestCase
 from io import BytesIO
-from script import *
+from script import Script
 
 class ScriptTest(TestCase):
 
