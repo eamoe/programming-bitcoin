@@ -8,6 +8,7 @@ from Tests.Tx_test import *
 from Tests.script_test import *
 from Tests.Signature_test import *
 from Tests.PrivateKey_test import *
+from Tests.ecc_test import *
 
 unittest.main()
 
