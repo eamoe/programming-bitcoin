@@ -629,8 +629,11 @@ def op_sha256(stack):
 
 
 def op_hash160(stack):
-    raise NotImplementedError
-
+    if len(stack) < 1:
+        return False
+    element = stack.pop()
+    stack.append(hash160(element))
+    return True
 
 def op_hash256(stack):
     if len(stack) < 1:
