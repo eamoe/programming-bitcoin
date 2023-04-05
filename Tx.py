@@ -115,9 +115,12 @@ class Tx:
         for i, tx_in in enumerate(self.tx_ins):
             # if the input index is the one we're signing
             if i == input_index:
+                if redeem_script:
+                    script_sig = redeem_script
+                else:
+                    script_sig = tx_in.script_pubkey(self.testnet)
                 # if the RedeemScript was passed in, that's the ScriptSig
                 # otherwise the previous tx's ScriptPubkey is the ScriptSig
-                script_sig = tx_in.script_pubkey(self.testnet)
             # Otherwise, the ScriptSig is empty
             else:
                 script_sig = None
@@ -156,7 +159,13 @@ class Tx:
         # otherwise RedeemScript is None
         # get the signature hash (z)
         # pass the RedeemScript to the sig_hash method
-        z = self.sig_hash(input_index)
+        if script_pubkey.is_p2sh_script_pubkey():
+            cmd = tx_in.script_sig.cmds[-1]
+            raw_redeem = encode_varint(len(cmd)) + cmd
+            redeem_script = Script.parse(BytesIO(raw_redeem))
+        else:
+            redeem_script = None
+        z = self.sig_hash(input_index, redeem_script)
         # combine the current ScriptSig and the previous ScriptPubKey
         combined = tx_in.script_sig + script_pubkey
         # evaluate the combined script
