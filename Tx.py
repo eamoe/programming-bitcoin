@@ -335,6 +335,8 @@ class TxOut:
 
     def serialize(self):
         '''Returns the byte serialization of the transaction output'''
+        # serialize amount, 8 bytes, little endian
         result = int_to_little_endian(self.amount, 8)
+        # serialize the script_pubkey
         result += self.script_pubkey.serialize()
         return result
