@@ -39,3 +39,22 @@ This locking/unlocking mechanism, which is often called a smart contract. “Sma
 Transactions assign bitcoins to a locking script. The locking script is what’s specified in the ScriptPubKey field.
 
 The unlocking of the lockbox is done in the ScriptSig field.
+
+## Transaction Creation and Validation
+
+Every node, when receiving transactions, makes sure that each transaction adheres to the network rules. This process is called transaction validation.
+
+The main things that a node checks:
+
+- The inputs of the transaction are previously unspent (prevents double-spending).
+
+    This can be checked by any full node by looking at the UTXO set.
+
+    A full node can check the spentness of an input pretty easily, but a light client has to get this information from someone else.
+
+- The sum of the inputs is greater than or equal to the sum of the outputs (makes sure no new bitcoins are created, except a coinbase transaction).
+
+    Since inputs don’t have an amount field, this must be looked up on the blockchain. Once again, full nodes have access to the amounts associated with the unspent output, but light clients have to depend on full nodes to supply this information.
+
+- The ScriptSig successfully unlocks the previous ScriptPubKey (makes sure that the combien scripti is valid).
+
