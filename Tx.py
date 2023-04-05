@@ -161,6 +161,17 @@ class Tx:
         combined = tx_in.script_sig + script_pubkey
         # evaluate the combined script
         return combined.evaluate(z)
+    
+    def verify(self):
+        '''Verify this transaction'''
+        # check that we're not creating money
+        if self.fee() < 0:
+            return False
+        # check that each input has a valid ScriptSig
+        for i in range(len(self.tx_ins)):
+            if not self.verify_input(i):
+                return False
+        return True
 
 class TxIn:
 
