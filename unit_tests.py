@@ -9,6 +9,7 @@ from Tests.script_test import *
 from Tests.Signature_test import *
 from Tests.PrivateKey_test import *
 from Tests.ecc_test import *
+from Tests.op_test import *
 
 unittest.main()
 
