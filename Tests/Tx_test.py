@@ -1,7 +1,6 @@
 from unittest import TestCase
 from io import BytesIO
-from Tx import Tx
-from TxFetcher import *
+from Tx import Tx, TxFetcher
 
 class TxTest(TestCase):
     cache_file = './tx.cache'
