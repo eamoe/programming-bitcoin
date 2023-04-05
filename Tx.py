@@ -172,6 +172,23 @@ class Tx:
             if not self.verify_input(i):
                 return False
         return True
+    
+    def sign_input(self, input_index, private_key):
+        '''Signs the input using the private key'''
+        # get the signature hash (z)
+        z = self.sig_hash(input_index)
+        # get der signature of z from private key
+        der = private_key.sign(z).der()
+        # append the SIGHASH_ALL to der (use SIGHASH_ALL.to_bytes(1, 'big'))
+        sig = der + SIGHASH_ALL.to_bytes(1, 'big')
+        # calculate the sec
+        sec = private_key.point.sec()
+        # initialize a new script with [sig, sec] as the cmds
+        script_sig = Script([sig, sec])
+        # change input's script_sig to new script
+        self.tx_ins[input_index].script_sig = script_sig
+        # return whether sig is valid using self.verify_input
+        return self.verify_input(input_index)
 
 class TxIn:
 
