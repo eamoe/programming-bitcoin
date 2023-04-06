@@ -103,3 +103,17 @@ The transaction structure is no different from that of other transactions on the
  - The one input must have a previous index of ffffffff.
 
 These three conditions determine whether a transaction is a coinbase transaction or not.
+
+## Simplified Payment Verification
+
+For any wallet, there are two scenarios that we’re concerned with:
+ - Paying someone
+ 
+ - Getting paid by someone
+
+If you are paying someone with your Bitcoin wallet, it is up to the person receiving your bitcoins to verify that they’ve been paid. Once they’ve verified that the transaction has been included in a block sufficiently deep, the other side of the trade, or the good or service, will be given to you.
+
+When getting paid bitcoins, however, we have a dilemma. If we are connected and have the full blockchain, we can easily see when the transaction is in a sufficiently deep block, at which point we give the other party our goods or services. But if we don’t have the full blockchain, as with a phone, what can we do?
+
+The answer lies in the Merkle root field from the block header.
+
