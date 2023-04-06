@@ -64,3 +64,4 @@ class SimpleNodeTest(TestCase):
     def test_handshake(self):
         node = SimpleNode('testnet.programmingbitcoin.com', testnet=True)
         node.handshake()
+        node.socket.close()
