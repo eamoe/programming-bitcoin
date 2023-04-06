@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from Helper.helper import (
     bits_to_target,
     hash256,
