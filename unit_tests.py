@@ -1,5 +1,6 @@
 import unittest
 
+from Tests.block_test import *
 from Tests.ecc_test import *
 from Tests.FieldElement_test import *
 from Tests.helper_test import *
