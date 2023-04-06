@@ -58,3 +58,17 @@ The main things that a node checks:
 
 - The ScriptSig successfully unlocks the previous ScriptPubKey (makes sure that the combien scripti is valid).
 
+### Creating Transactions
+
+Transactions require the sum of the inputs to be greater than or equal to the sum of the outputs. Similarly, transactions require a ScriptSig that, when combined with the ScriptPubKey, are valid.
+
+To create a transaction, we need at least one output we’ve received. That is, we need an output from the UTXO set whose ScriptPubKey we can unlock.
+
+The construction of a transaction requires answering some basic questions:
+
+- Where do we want the bitcoins to go?
+
+- What UTXOs can we spend?
+
+- How quickly do we want this transaction to get into the blockchain?
+
