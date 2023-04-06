@@ -13,6 +13,9 @@ from op import (
 
 def p2pkh_script(h160):
     '''Takes a hash160 and returns the p2pkh ScriptPubKey'''
+    # 0x76 is OP_DUP, 0xa9 is OP_HASH160,
+    # h160 is a 20-byte element, 0x88 is OP_EQUALVERIFY,
+    # and 0xac is OP_CHECKSIG
     return Script([0x76, 0xa9, h160, 0x88, 0xac])
 
 
