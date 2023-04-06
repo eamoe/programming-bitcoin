@@ -72,3 +72,34 @@ The construction of a transaction requires answering some basic questions:
 
 - How quickly do we want this transaction to get into the blockchain?
 
+## Blocks
+
+Transactions transfer bitcoins from one party to another and are unlocked, or authorized, by signatures. This ensures that the sender authorized the transaction, but what if the sender sends the same coins to multiple people? This is called the double-spending problem.
+
+Much like being given a check that has the possibility of bouncing, the receiver needs to be assured that the transaction is valid.
+
+This is where a major innovation of Bitcoin comes in, with blocks. Think of blocks as a way to order transactions. If we order transactions, a double-spend can be prevented by making any later, conflicting transaction invalid. This is the equivalent to accepting the earlier transaction as the valid one.
+
+Implementing this rule would be easy (earliest transaction is valid, subsequent transactions
+that conflict are invalid) if we could order transactions one at a time. Unfortunately,
+that would require nodes on the network to agree on which transaction is supposed to be next and would cause a lot of transmission overhead in coming to
+consensus.
+
+We could also order large batches of transactions, maybe once per day, but that wouldn’t be very practical as transactions would settle only once per day and not
+have finality before then.
+
+Bitcoin finds a middle ground between these extremes by settling every 10 minutes in batches of transactions. These batches of transactions are what we call blocks.
+
+### Coinbase Transaction
+
+Coinbase is the required first transaction of every block and is the only transaction allowed to bring bitcoins into existence. The coinbase transaction’s outputs are kept by whomever the mining entity designates and usually include all the transaction fees of the other transactions in the block as well as something called the block reward.
+
+The transaction structure is no different from that of other transactions on the Bitcoin network, with a few exceptions:
+
+ - Coinbase transactions must have exactly one input.
+
+ - The one input must have a previous transaction of 32 bytes of 00.
+
+ - The one input must have a previous index of ffffffff.
+
+These three conditions determine whether a transaction is a coinbase transaction or not.
