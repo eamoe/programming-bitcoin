@@ -115,12 +115,12 @@ class Tx:
         for i, tx_in in enumerate(self.tx_ins):
             # if the input index is the one we're signing
             if i == input_index:
+                # if the RedeemScript was passed in, that's the ScriptSig
                 if redeem_script:
                     script_sig = redeem_script
+                # otherwise the previous tx's ScriptPubkey is the ScriptSig
                 else:
                     script_sig = tx_in.script_pubkey(self.testnet)
-                # if the RedeemScript was passed in, that's the ScriptSig
-                # otherwise the previous tx's ScriptPubkey is the ScriptSig
             # Otherwise, the ScriptSig is empty
             else:
                 script_sig = None
@@ -153,18 +153,18 @@ class Tx:
         script_pubkey = tx_in.script_pubkey(testnet=self.testnet)
         # check to see if the ScriptPubkey is a p2sh using
         # Script.is_p2sh_script_pubkey()
-            # the last cmd in a p2sh is the RedeemScript
-            # prepend the length of the RedeemScript using encode_varint
-            # parse the RedeemScript
-        # otherwise RedeemScript is None
-        # get the signature hash (z)
-        # pass the RedeemScript to the sig_hash method
         if script_pubkey.is_p2sh_script_pubkey():
+            # the last cmd in a p2sh is the RedeemScript
             cmd = tx_in.script_sig.cmds[-1]
+            # prepend the length of the RedeemScript using encode_varint
             raw_redeem = encode_varint(len(cmd)) + cmd
+            # parse the RedeemScript
             redeem_script = Script.parse(BytesIO(raw_redeem))
+        # otherwise RedeemScript is None
         else:
             redeem_script = None
+        # get the signature hash (z)
+        # pass the RedeemScript to the sig_hash method
         z = self.sig_hash(input_index, redeem_script)
         # combine the current ScriptSig and the previous ScriptPubKey
         combined = tx_in.script_sig + script_pubkey
@@ -198,6 +198,33 @@ class Tx:
         self.tx_ins[input_index].script_sig = script_sig
         # return whether sig is valid using self.verify_input
         return self.verify_input(input_index)
+    
+    def is_coinbase(self):
+        '''Returns whether this transaction is a coinbase transaction or not'''
+        # check that there is exactly 1 input
+        if len(self.tx_ins) != 1:
+            return False
+        # grab the first input
+        first_input = self.tx_ins[0]
+        # check that first input prev_tx is b'\x00' * 32 bytes
+        if first_input.prev_tx != b'\x00' * 32:
+            return False
+        # check that first input prev_index is 0xffffffff
+        if first_input.prev_index != 0xffffffff:
+            return False
+        return True
+    
+    def coinbase_height(self):
+        '''Returns the height of the block this coinbase transaction is in
+        Returns None if this transaction is not a coinbase transaction
+        '''
+        # if this is NOT a coinbase transaction, return None
+        if not self.is_coinbase():
+            return None
+        # grab the first cmd
+        first_cmd = self.tx_ins[0].script_sig.cmds[0]
+        # convert the cmd from little endian to int
+        return little_endian_to_int(first_cmd)
 
 class TxIn:
 
@@ -274,19 +301,20 @@ class TxFetcher:
     @classmethod
     def get_url(cls, testnet=False):
         if testnet:
-            return 'https://blockstream.info/testnet/api/'
+            return 'https://blockstream.info/testnet/api'
         else:
-            return 'https://blockstream.info/api/'
+            return 'https://blockstream.info/api'
 
     @classmethod
     def fetch(cls, tx_id, testnet=False, fresh=False):
         if fresh or (tx_id not in cls.cache):
-            url = '{}/tx/{}/hex'.format(cls.get_url(testnet), tx_id)
+            url = '{}/tx/{}.hex'.format(cls.get_url(testnet), tx_id)
             response = requests.get(url)
             try:
                 raw = bytes.fromhex(response.text.strip())
             except ValueError:
                 raise ValueError('unexpected response: {}'.format(response.text))
+            # make sure the tx we got matches to the hash we requested
             if raw[4] == 0:
                 raw = raw[:4] + raw[6:]
                 tx = Tx.parse(BytesIO(raw), testnet=testnet)
@@ -294,8 +322,7 @@ class TxFetcher:
             else:
                 tx = Tx.parse(BytesIO(raw), testnet=testnet)
             if tx.id() != tx_id:
-                raise ValueError('not the same id: {} vs {}'.format(tx.id(), 
-                                tx_id))
+                raise ValueError('not the same id: {} vs {}'.format(tx.id(), tx_id))
             cls.cache[tx_id] = tx
         cls.cache[tx_id].testnet = testnet
         return cls.cache[tx_id]
