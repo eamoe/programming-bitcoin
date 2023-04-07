@@ -1,7 +1,7 @@
 from io import BytesIO
 from logging import getLogger
 
-from Helper.helper import (
+from helper import (
     encode_varint,
     int_to_little_endian,
     little_endian_to_int,

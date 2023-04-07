@@ -1,6 +1,6 @@
 import math
 
-from Helper.helper import (
+from helper import (
     merkle_parent,
     little_endian_to_int,
     read_varint,

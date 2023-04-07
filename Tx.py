@@ -2,7 +2,7 @@ from io import BytesIO
 import json
 import requests
 
-from Helper.helper import (
+from helper import (
     encode_varint,
     hash256,
     int_to_little_endian,

@@ -6,7 +6,7 @@ from random import randint
 
 
 from block import Block
-from Helper.helper import (
+from helper import (
     hash256,
     encode_varint,
     int_to_little_endian,

@@ -4,7 +4,7 @@ from io import BytesIO
 
 from merkleblock import MerkleBlock
 
-from Helper.helper import (
+from helper import (
     little_endian_to_int,
 )
 

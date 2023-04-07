@@ -1,5 +1,5 @@
 from unittest import TestCase
-from Helper.helper import (
+from helper import (
     little_endian_to_int,
     int_to_little_endian,
     decode_base58,
