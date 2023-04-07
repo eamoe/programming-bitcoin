@@ -4,6 +4,8 @@ from Tests.block_test import *
 from Tests.ecc_test import *
 from Tests.FieldElement_test import *
 from Tests.helper_test import *
+from Tests.merkleblock_test import *
+from Tests.merkletree_test import *
 from Tests.network_test import *
 from Tests.op_test import *
 from Tests.Point_test import *
