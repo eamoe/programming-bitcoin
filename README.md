@@ -117,3 +117,14 @@ When getting paid bitcoins, however, we have a dilemma. If we are connected and 
 
 The answer lies in the Merkle root field from the block header.
 
+## Bloom Filters
+
+A full node can provide a proof of inclusion for transactions of interest through the *merkleblock* command. But how does the full node know which transactions are of interest?
+
+A light client could tell the full node its addresses (or ScriptPubKeys). The full node can check for transactions that are relevant to these addresses, but that would be compromising the light client’s privacy. 
+
+A light client wouldn’t want to reveal, for example, that it has 1,000 BTC to a full node. Privacy leaks are security leaks, and in Bitcoin, it’s generally a good idea to not leak any privacy whenever possible.
+
+One solution is for the light client to tell the full node enough information to create a superset of all transactions of interest. To create this superset, we use what’s called a *Bloom filter*.
+
+A Bloom filter is a filter for all possible transactions. Full nodes run transactions through a Bloom filter and send merkleblock commands for transactions that make it through.
