@@ -3,8 +3,6 @@ import time
 
 from io import BytesIO
 from random import randint
-
-
 from block import Block
 from helper import (
     hash256,
@@ -13,7 +11,6 @@ from helper import (
     little_endian_to_int,
     read_varint,
 )
-
 
 NETWORK_MAGIC = b'\xf9\xbe\xb4\xd9'
 TESTNET_NETWORK_MAGIC = b'\x0b\x11\x09\x07'

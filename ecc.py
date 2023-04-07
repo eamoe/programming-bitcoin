@@ -1,10 +1,7 @@
-from io import BytesIO
-from random import randint
-from unittest import TestCase
-
 import hashlib
 import hmac
 
+from io import BytesIO
 from helper import (
     encode_base58_checksum,
     hash160

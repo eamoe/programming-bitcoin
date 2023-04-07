@@ -1,13 +1,14 @@
 import hashlib
 
 from logging import getLogger
-
+from ecc import (
+    S256Point,
+    Signature
+)
 from helper import (
     hash160,
     hash256,
 )
-
-from ecc import (S256Point, Signature)
 
 LOGGER = getLogger(__name__)
 

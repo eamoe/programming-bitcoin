@@ -1,6 +1,6 @@
 from unittest import TestCase
 from io import BytesIO
-from Tx import Tx, TxFetcher, TxIn
+from tx import Tx, TxFetcher, TxIn
 from ecc import PrivateKey
 
 class TxTest(TestCase):
