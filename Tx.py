@@ -1,7 +1,8 @@
-from io import BytesIO
 import json
 import requests
 
+from io import BytesIO
+from script import Script
 from helper import (
     encode_varint,
     hash256,
@@ -10,8 +11,6 @@ from helper import (
     read_varint,
     SIGHASH_ALL
 )
-
-from script import Script
 
 class Tx:
 
