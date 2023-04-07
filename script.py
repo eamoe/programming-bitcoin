@@ -6,6 +6,8 @@ from Helper.helper import (
     int_to_little_endian,
     little_endian_to_int,
     read_varint,
+    h160_to_p2pkh_address,
+    h160_to_p2sh_address,
 )
 from op import (
     op_equal,
@@ -209,3 +211,16 @@ class Script:
         return len(self.cmds) == 3 and self.cmds[0] == 0xa9 \
             and type(self.cmds[1]) == bytes and len(self.cmds[1]) == 20 \
             and self.cmds[2] == 0x87
+
+    def address(self, testnet=False):
+        '''Returns the address corresponding to the script'''
+        if self.is_p2pkh_script_pubkey():  # p2pkh
+            # hash160 is the 3rd cmd
+            h160 = self.cmds[2]
+            # convert to p2pkh address using h160_to_p2pkh_address (remember testnet)
+            return h160_to_p2pkh_address(h160, testnet)
+        elif self.is_p2sh_script_pubkey():  # p2sh
+            # hash160 is the 2nd cmd
+            h160 = self.cmds[1]
+            # convert to p2sh address using h160_to_p2sh_address (remember testnet)
+            return h160_to_p2sh_address(h160, testnet)
