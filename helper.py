@@ -61,7 +61,7 @@ def int_to_little_endian(n, length):
     return n.to_bytes(length, 'little')
 
 def read_varint(s):
-    # read_varint reads a variable integer from a stream
+    '''read_varint reads a variable integer from a stream'''
     i = s.read(1)[0]
     if i == 0xfd:
         # 0xfd means the next two bytes are the number
@@ -77,7 +77,7 @@ def read_varint(s):
         return i
 
 def encode_varint(i):
-# Encode an integer as a varint
+    '''encodes an integer as a varint'''
     if i < 0xfd:
         return bytes([i])
     elif i < 0x10000:
@@ -90,6 +90,8 @@ def encode_varint(i):
         raise ValueError('integer too large: {}'.format(i))
 
 def h160_to_p2pkh_address(h160, testnet=False):
+    '''Takes a byte sequence hash160 and returns a p2pkh address string'''
+    # p2pkh has a prefix of b'\x00' for mainnet, b'\x6f' for testnet
     if testnet:
         prefix = b'\x6f'
     else:
@@ -97,6 +99,8 @@ def h160_to_p2pkh_address(h160, testnet=False):
     return encode_base58_checksum(prefix + h160)
 
 def h160_to_p2sh_address(h160, testnet=False):
+    '''Takes a byte sequence hash160 and returns a p2sh address string'''
+    # p2sh has a prefix of b'\x05' for mainnet, b'\xc4' for testnet
     if testnet:
         prefix = b'\xc4'
     else:
