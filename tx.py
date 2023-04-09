@@ -2,7 +2,7 @@ import json
 import requests
 
 from io import BytesIO
-from script import Script
+from script import Script, p2pkh_script
 from helper import (
     encode_varint,
     hash256,
@@ -22,7 +22,6 @@ class Tx:
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
         self.locktime = locktime
-        # Define the network the transaction is on to be able to validate it fully
         self.testnet = testnet
         self.segwit = segwit
         self._hash_prevouts = None
@@ -45,14 +44,13 @@ class Tx:
         )
 
     def id(self):
-        # Human-readable hexadecimal of the transaction hash
+        '''Human-readable hexadecimal of the transaction hash'''
         return self.hash().hex()
-    
+
     def hash(self):
-        # Binary hash of the legacy serialization
-        return hash256(self.serialize())[::-1]
+        '''Binary hash of the legacy serialization'''
+        return hash256(self.serialize_legacy())[::-1]
     
-    # This method has to be a class method as the serialization will return a new instance of a Tx object
     @classmethod
     def parse(cls, s, testnet=False):
         s.read(4)
@@ -66,23 +64,18 @@ class Tx:
     @classmethod
     def parse_legacy(cls, s, testnet=False):
         version = little_endian_to_int(s.read(4))
-        # num_inputs is a varint, use read_varint(s)
         num_inputs = read_varint(s)
-        # parse num_inputs number of TxIns
         inputs = []
         for _ in range(num_inputs):
             inputs.append(TxIn.parse(s))
-        # num_outputs is a varint, use read_varint(s)
         num_outputs = read_varint(s)
-        # parse num_outputs number of TxOuts
         outputs = []
         for _ in range(num_outputs):
             outputs.append(TxOut.parse(s))
-        # locktime is an integer in 4 bytes, little-endian
         locktime = little_endian_to_int(s.read(4))
         return cls(version, inputs, outputs, locktime, 
                    testnet=testnet, segwit=False)
-    
+
     @classmethod
     def parse_segwit(cls, s, testnet=False):
         version = little_endian_to_int(s.read(4))
@@ -119,17 +112,11 @@ class Tx:
 
     def serialize_legacy(self):
         result = int_to_little_endian(self.version, 4)
-        # encode_varint on the number of inputs
         result += encode_varint(len(self.tx_ins))
-        # iterate inputs
         for tx_in in self.tx_ins:
-            # serialize each input
             result += tx_in.serialize()
-        # encode_varint on the number of outputs
         result += encode_varint(len(self.tx_outs))
-        # iterate outputs
         for tx_out in self.tx_outs:
-            # serialize each output
             result += tx_out.serialize()
         result += int_to_little_endian(self.locktime, 4)
         return result
@@ -152,20 +139,20 @@ class Tx:
                     result += encode_varint(len(item)) + item
         result += int_to_little_endian(self.locktime, 4)
         return result
-    
+
     def fee(self):
         '''Returns the fee of this transaction in satoshi'''
         # initialize input sum and output sum
-        # use TxIn.value() to sum up the input amounts
-        # use TxOut.amount to sum up the output amounts
-        # fee is input sum - output sum
         input_sum, output_sum = 0, 0
+        # use TxIn.value() to sum up the input amounts
         for tx_in in self.tx_ins:
             input_sum += tx_in.value(self.testnet)
+        # use TxOut.amount to sum up the output amounts
         for tx_out in self.tx_outs:
             output_sum += tx_out.amount
+        # fee is input sum - output sum
         return input_sum - output_sum
-    
+
     def sig_hash(self, input_index, redeem_script=None):
         '''Returns the integer representation of the hash that needs to get
         signed for index input_index'''
@@ -207,7 +194,53 @@ class Tx:
         h256 = hash256(s)
         # convert the result to an integer using int.from_bytes(x, 'big')
         return int.from_bytes(h256, 'big')
-    
+
+    def hash_prevouts(self):
+        if self._hash_prevouts is None:
+            all_prevouts = b''
+            all_sequence = b''
+            for tx_in in self.tx_ins:
+                all_prevouts += tx_in.prev_tx[::-1] + int_to_little_endian(tx_in.prev_index, 4)
+                all_sequence += int_to_little_endian(tx_in.sequence, 4)
+            self._hash_prevouts = hash256(all_prevouts)
+            self._hash_sequence = hash256(all_sequence)
+        return self._hash_prevouts
+
+    def hash_sequence(self):
+        if self._hash_sequence is None:
+            self.hash_prevouts()  # this should calculate self._hash_prevouts
+        return self._hash_sequence
+
+    def hash_outputs(self):
+        if self._hash_outputs is None:
+            all_outputs = b''
+            for tx_out in self.tx_outs:
+                all_outputs += tx_out.serialize()
+            self._hash_outputs = hash256(all_outputs)
+        return self._hash_outputs
+
+    def sig_hash_bip143(self, input_index, redeem_script=None, witness_script=None):
+        '''Returns the integer representation of the hash that needs to get
+        signed for index input_index'''
+        tx_in = self.tx_ins[input_index]
+        # per BIP143 spec
+        s = int_to_little_endian(self.version, 4)
+        s += self.hash_prevouts() + self.hash_sequence()
+        s += tx_in.prev_tx[::-1] + int_to_little_endian(tx_in.prev_index, 4)
+        if witness_script:
+            script_code = witness_script.serialize()
+        elif redeem_script:
+            script_code = p2pkh_script(redeem_script.cmds[1]).serialize()
+        else:
+            script_code = p2pkh_script(tx_in.script_pubkey(self.testnet).cmds[1]).serialize()
+        s += script_code
+        s += int_to_little_endian(tx_in.value(), 8)
+        s += int_to_little_endian(tx_in.sequence, 4)
+        s += self.hash_outputs()
+        s += int_to_little_endian(self.locktime, 4)
+        s += int_to_little_endian(SIGHASH_ALL, 4)
+        return int.from_bytes(hash256(s), 'big')
+
     def verify_input(self, input_index):
         '''Returns whether the input has a valid signature'''
         # get the relevant input
@@ -252,7 +285,7 @@ class Tx:
         combined = tx_in.script_sig + script_pubkey
         # evaluate the combined script
         return combined.evaluate(z, witness)
-    
+
     def verify(self):
         '''Verify this transaction'''
         # check that we're not creating money
@@ -263,7 +296,7 @@ class Tx:
             if not self.verify_input(i):
                 return False
         return True
-    
+
     def sign_input(self, input_index, private_key):
         '''Signs the input using the private key'''
         # get the signature hash (z)
@@ -280,7 +313,7 @@ class Tx:
         self.tx_ins[input_index].script_sig = script_sig
         # return whether sig is valid using self.verify_input
         return self.verify_input(input_index)
-    
+
     def is_coinbase(self):
         '''Returns whether this transaction is a coinbase transaction or not'''
         # check that there is exactly 1 input
@@ -295,7 +328,7 @@ class Tx:
         if first_input.prev_index != 0xffffffff:
             return False
         return True
-    
+
     def coinbase_height(self):
         '''Returns the height of the block this coinbase transaction is in
         Returns None if this transaction is not a coinbase transaction
@@ -359,8 +392,7 @@ class TxIn:
 
     def value(self, testnet=False):
         '''Get the outpoint value by looking up the tx hash
-        Returns the amount in satoshi
-        '''
+        Returns the amount in satoshi'''
         # use self.fetch_tx to get the transaction
         tx = self.fetch_tx(testnet=testnet)
         # get the output at self.prev_index
