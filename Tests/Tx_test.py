@@ -11,6 +11,11 @@ class TxTest(TestCase):
         # fill with cache so we don't have to be online to run these tests
         TxFetcher.load_cache(cls.cache_file)
 
+    @classmethod
+    def tearDownClass(cls):
+        # write the cache to disk
+        TxFetcher.dump_cache(cls.cache_file)
+
     def test_parse_version(self):
         raw_tx = bytes.fromhex('0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600')
         stream = BytesIO(raw_tx)
@@ -92,6 +97,22 @@ class TxTest(TestCase):
 
     def test_verify_p2sh(self):
         tx = TxFetcher.fetch('46df1a9484d0a81d03ce0ee543ab6e1a23ed06175c104a178268fad381216c2b')
+        self.assertTrue(tx.verify())
+
+    def test_verify_p2wpkh(self):
+        tx = TxFetcher.fetch('d869f854e1f8788bcff294cc83b280942a8c728de71eb709a2c29d10bfe21b7c', testnet=True)
+        self.assertTrue(tx.verify())
+
+    def test_verify_p2sh_p2wpkh(self):
+        tx = TxFetcher.fetch('c586389e5e4b3acb9d6c8be1c19ae8ab2795397633176f5a6442a261bbdefc3a')
+        self.assertTrue(tx.verify())
+
+    def test_verify_p2wsh(self):
+        tx = TxFetcher.fetch('78457666f82c28aa37b74b506745a7c7684dc7842a52a457b09f09446721e11c', testnet=True)
+        self.assertTrue(tx.verify())
+
+    def test_verify_p2sh_p2wsh(self):
+        tx = TxFetcher.fetch('954f43dbb30ad8024981c07d1f5eb6c9fd461e2cf1760dd1283f052af746fc88', testnet=True)
         self.assertTrue(tx.verify())
 
     def test_sign_input(self):

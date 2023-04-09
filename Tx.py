@@ -16,13 +16,18 @@ class Tx:
 
     command = b'tx'
 
-    def __init__(self, version, tx_ins, tx_outs, locktime, testnet=False):
+    def __init__(self, version, tx_ins, tx_outs, 
+        locktime, testnet=False, segwit=False):
         self.version = version
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
         self.locktime = locktime
         # Define the network the transaction is on to be able to validate it fully
         self.testnet = testnet
+        self.segwit = segwit
+        self._hash_prevouts = None
+        self._hash_sequence = None
+        self._hash_outputs = None
 
     def __repr__(self):
         tx_ins = ''
@@ -50,9 +55,16 @@ class Tx:
     # This method has to be a class method as the serialization will return a new instance of a Tx object
     @classmethod
     def parse(cls, s, testnet=False):
-        # The read method allows to parse on the fly so that it will not need to wait on I/O
-        # s.read(n) will return n bytes
-        # version is an integer in 4 bytes, little-endian
+        s.read(4)
+        if s.read(1) == b'\x00':
+            parse_method = cls.parse_segwit
+        else:
+            parse_method = cls.parse_legacy
+        s.seek(-5, 1)
+        return parse_method(s, testnet=testnet)
+
+    @classmethod
+    def parse_legacy(cls, s, testnet=False):
         version = little_endian_to_int(s.read(4))
         # num_inputs is a varint, use read_varint(s)
         num_inputs = read_varint(s)
@@ -68,12 +80,44 @@ class Tx:
             outputs.append(TxOut.parse(s))
         # locktime is an integer in 4 bytes, little-endian
         locktime = little_endian_to_int(s.read(4))
-        # return an instance of the class (see __init__ for args)
-        return cls(version, inputs, outputs, locktime, testnet=testnet)        
+        return cls(version, inputs, outputs, locktime, 
+                   testnet=testnet, segwit=False)
     
+    @classmethod
+    def parse_segwit(cls, s, testnet=False):
+        version = little_endian_to_int(s.read(4))
+        marker = s.read(2)
+        if marker != b'\x00\x01':
+            raise RuntimeError('Not a segwit transaction {}'.format(marker))
+        num_inputs = read_varint(s)
+        inputs = []
+        for _ in range(num_inputs):
+            inputs.append(TxIn.parse(s))
+        num_outputs = read_varint(s)
+        outputs = []
+        for _ in range(num_outputs):
+            outputs.append(TxOut.parse(s))
+        for tx_in in inputs:
+            num_items = read_varint(s)
+            items = []
+            for _ in range(num_items):
+                item_len = read_varint(s)
+                if item_len == 0:
+                    items.append(0)
+                else:
+                    items.append(s.read(item_len))
+            tx_in.witness = items
+        locktime = little_endian_to_int(s.read(4))
+        return cls(version, inputs, outputs, locktime, 
+                   testnet=testnet, segwit=True)
+
     def serialize(self):
-        '''Returns the byte serialization of the transaction'''
-        # serialize version (4 bytes, little endian)
+        if self.segwit:
+            return self.serialize_segwit()
+        else:
+            return self.serialize_legacy()
+
+    def serialize_legacy(self):
         result = int_to_little_endian(self.version, 4)
         # encode_varint on the number of inputs
         result += encode_varint(len(self.tx_ins))
@@ -87,7 +131,25 @@ class Tx:
         for tx_out in self.tx_outs:
             # serialize each output
             result += tx_out.serialize()
-        # serialize locktime (4 bytes, little endian)
+        result += int_to_little_endian(self.locktime, 4)
+        return result
+
+    def serialize_segwit(self):
+        result = int_to_little_endian(self.version, 4)
+        result += b'\x00\x01'
+        result += encode_varint(len(self.tx_ins))
+        for tx_in in self.tx_ins:
+            result += tx_in.serialize()
+        result += encode_varint(len(self.tx_outs))
+        for tx_out in self.tx_outs:
+            result += tx_out.serialize()
+        for tx_in in self.tx_ins:
+            result += int_to_little_endian(len(tx_in.witness), 1)
+            for item in tx_in.witness:
+                if type(item) == int:
+                    result += int_to_little_endian(item, 1)
+                else:
+                    result += encode_varint(len(item)) + item
         result += int_to_little_endian(self.locktime, 4)
         return result
     
@@ -298,7 +360,7 @@ class TxIn:
 
 class TxFetcher:
     cache = {}
-
+    
     @classmethod
     def get_url(cls, testnet=False):
         if testnet:
@@ -309,21 +371,20 @@ class TxFetcher:
     @classmethod
     def fetch(cls, tx_id, testnet=False, fresh=False):
         if fresh or (tx_id not in cls.cache):
-            url = '{}/tx/{}.hex'.format(cls.get_url(testnet), tx_id)
+            url = '{}/tx/{}/hex'.format(cls.get_url(testnet), tx_id)
             response = requests.get(url)
             try:
                 raw = bytes.fromhex(response.text.strip())
             except ValueError:
                 raise ValueError('unexpected response: {}'.format(response.text))
+            tx = Tx.parse(BytesIO(raw), testnet=testnet)
             # make sure the tx we got matches to the hash we requested
-            if raw[4] == 0:
-                raw = raw[:4] + raw[6:]
-                tx = Tx.parse(BytesIO(raw), testnet=testnet)
-                tx.locktime = little_endian_to_int(raw[-4:])
+            if tx.segwit:
+                computed = tx.id()
             else:
-                tx = Tx.parse(BytesIO(raw), testnet=testnet)
-            if tx.id() != tx_id:
-                raise ValueError('not the same id: {} vs {}'.format(tx.id(), tx_id))
+                computed = hash256(raw)[::-1].hex()
+            if computed != tx_id:
+                raise RuntimeError('server lied: {} vs {}'.format(computed, tx_id))
             cls.cache[tx_id] = tx
         cls.cache[tx_id].testnet = testnet
         return cls.cache[tx_id]
@@ -333,14 +394,7 @@ class TxFetcher:
         with open(filename, 'r') as f:
             disk_cache = json.loads(f.read())
         for k, raw_hex in disk_cache.items():
-            raw = bytes.fromhex(raw_hex)
-            if raw[4] == 0:
-                raw = raw[:4] + raw[6:]
-                tx = Tx.parse(BytesIO(raw))
-                tx.locktime = little_endian_to_int(raw[-4:])
-            else:
-                tx = Tx.parse(BytesIO(raw))
-            cls.cache[k] = tx
+            cls.cache[k] = Tx.parse(BytesIO(bytes.fromhex(raw_hex)))
 
     @classmethod
     def dump_cache(cls, filename):
