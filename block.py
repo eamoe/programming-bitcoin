@@ -115,5 +115,3 @@ class Block:
         root = merkle_root(hashes)[::-1]
         # return whether self.merkle_root is the same
         return root == self.merkle_root
-
-    
