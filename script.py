@@ -1,5 +1,3 @@
-from hashlib import sha256
-
 from io import BytesIO
 from logging import getLogger
 from helper import (
@@ -9,6 +7,7 @@ from helper import (
     read_varint,
     h160_to_p2pkh_address,
     h160_to_p2sh_address,
+    sha256,
 )
 from op import (
     op_equal,

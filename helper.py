@@ -8,6 +8,9 @@ SIGHASH_SINGLE = 3
 TWO_WEEKS = 60 * 60 * 24 * 14
 MAX_TARGET = 0xffff * 256**(0x1d - 3)
 
+def sha256(s):
+    return hashlib.sha256(s).digest()
+
 def hash160(s):
     '''sha256 followed by ripemd160'''
     return hashlib.new('ripemd160', hashlib.sha256(s).digest()).digest()
