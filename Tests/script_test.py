@@ -1,6 +1,11 @@
 from unittest import TestCase
 from io import BytesIO
-from script import Script
+from script import (
+    Script,
+    p2pkh_script,
+    p2sh_script
+)
+from helper import decode_base58
 
 class ScriptTest(TestCase):
 
@@ -17,3 +22,17 @@ class ScriptTest(TestCase):
         script_pubkey = BytesIO(bytes.fromhex(want))
         script = Script.parse(script_pubkey)
         self.assertEqual(script.serialize().hex(), want)
+
+    def test_address(self):
+        address_1 = '1BenRpVUFK65JFWcQSuHnJKzc4M8ZP8Eqa'
+        h160 = decode_base58(address_1)
+        p2pkh_script_pubkey = p2pkh_script(h160)
+        self.assertEqual(p2pkh_script_pubkey.address(), address_1)
+        address_2 = 'mrAjisaT4LXL5MzE81sfcDYKU3wqWSvf9q'
+        self.assertEqual(p2pkh_script_pubkey.address(testnet=True), address_2)
+        address_3 = '3CLoMMyuoDQTPRD3XYZtCvgvkadrAdvdXh'
+        h160 = decode_base58(address_3)
+        p2sh_script_pubkey = p2sh_script(h160)
+        self.assertEqual(p2sh_script_pubkey.address(), address_3)
+        address_4 = '2N3u1R6uwQfuobCqbCgBkpsgBxvr1tZpe7B'
+        self.assertEqual(p2sh_script_pubkey.address(testnet=True), address_4)

@@ -1,3 +1,5 @@
+from hashlib import sha256
+
 from io import BytesIO
 from logging import getLogger
 from helper import (
@@ -27,6 +29,14 @@ def p2pkh_script(h160):
 def p2sh_script(h160):
     '''Takes a hash160 and returns the p2sh ScriptPubKey'''
     return Script([0xa9, h160, 0x87])
+
+def p2wpkh_script(h160):
+    '''Takes a hash160 and returns the p2wpkh ScriptPubKey'''
+    return Script([0x00, h160])
+
+def p2wsh_script(h256):
+    '''Takes a hash160 and returns the p2wsh ScriptPubKey'''
+    return Script([0x00, h256])
 
 LOGGER = getLogger(__name__)
 
@@ -136,7 +146,7 @@ class Script:
         # encode_varint the total length of the result and prepend
         return encode_varint(total) + result
 
-    def evaluate(self, z):
+    def evaluate(self, z, witness):
         # create a copy as we may need to add to this list if we have a
         # RedeemScript
         cmds = self.cmds[:]
@@ -170,9 +180,13 @@ class Script:
             else:
                 # add the cmd to the stack
                 stack.append(cmd)
+                # p2sh rule. if the next three cmds are:
+                # OP_HASH160 <20 byte hash> OP_EQUAL this is the RedeemScript
+                # OP_HASH160 == 0xa9 and OP_EQUAL == 0x87
                 if len(cmds) == 3 and cmds[0] == 0xa9 \
                     and type(cmds[1]) == bytes and len(cmds[1]) == 20 \
                     and cmds[2] == 0x87:
+                    redeem_script = encode_varint(len(cmd)) + cmd
                     # we execute the next three opcodes
                     cmds.pop()
                     h160 = cmds.pop()
@@ -190,6 +204,31 @@ class Script:
                     redeem_script = encode_varint(len(cmd)) + cmd
                     stream = BytesIO(redeem_script)
                     cmds.extend(Script.parse(stream).cmds)
+                # witness program version 0 rule. if stack cmds are:
+                # 0 <20 byte hash> this is p2wpkh
+                # tag::source3[]
+                if len(stack) == 2 and stack[0] == b'' and len(stack[1]) == 20:
+                    h160 = stack.pop()
+                    stack.pop()
+                    cmds.extend(witness)
+                    cmds.extend(p2pkh_script(h160).cmds)
+                # end::source3[]
+                # witness program version 0 rule. if stack cmds are:
+                # 0 <32 byte hash> this is p2wsh
+                # tag::source6[]
+                if len(stack) == 2 and stack[0] == b'' and len(stack[1]) == 32:
+                    s256 = stack.pop()
+                    stack.pop()
+                    cmds.extend(witness[:-1])
+                    witness_script = witness[-1]
+                    if s256 != sha256(witness_script):
+                        print('bad sha256 {} vs {}'.format
+                            (s256.hex(), sha256(witness_script).hex()))
+                        return False
+                    stream = BytesIO(encode_varint(len(witness_script)) 
+                        + witness_script)
+                    witness_script_cmds = Script.parse(stream).cmds
+                    cmds.extend(witness_script_cmds)
         if len(stack) == 0:
             return False
         if stack.pop() == b'':
@@ -199,6 +238,9 @@ class Script:
     def is_p2pkh_script_pubkey(self):
         '''Returns whether this follows the
         OP_DUP OP_HASH160 <20 byte hash> OP_EQUALVERIFY OP_CHECKSIG pattern.'''
+        # there should be exactly 5 cmds
+        # OP_DUP (0x76), OP_HASH160 (0xa9), 20-byte hash, OP_EQUALVERIFY (0x88),
+        # OP_CHECKSIG (0xac)
         return len(self.cmds) == 5 and self.cmds[0] == 0x76 \
             and self.cmds[1] == 0xa9 \
             and type(self.cmds[2]) == bytes and len(self.cmds[2]) == 20 \
@@ -207,9 +249,19 @@ class Script:
     def is_p2sh_script_pubkey(self):
         '''Returns whether this follows the
         OP_HASH160 <20 byte hash> OP_EQUAL pattern.'''
+        # there should be exactly 3 cmds
+        # OP_HASH160 (0xa9), 20-byte hash, OP_EQUAL (0x87)
         return len(self.cmds) == 3 and self.cmds[0] == 0xa9 \
             and type(self.cmds[1]) == bytes and len(self.cmds[1]) == 20 \
             and self.cmds[2] == 0x87
+
+    def is_p2wpkh_script_pubkey(self):  # <2>
+        return len(self.cmds) == 2 and self.cmds[0] == 0x00 \
+            and type(self.cmds[1]) == bytes and len(self.cmds[1]) == 20
+    
+    def is_p2wsh_script_pubkey(self):
+        return len(self.cmds) == 2 and self.cmds[0] == 0x00 \
+            and type(self.cmds[1]) == bytes and len(self.cmds[1]) == 32
 
     def address(self, testnet=False):
         '''Returns the address corresponding to the script'''
@@ -223,3 +275,4 @@ class Script:
             h160 = self.cmds[1]
             # convert to p2sh address using h160_to_p2sh_address (remember testnet)
             return h160_to_p2sh_address(h160, testnet)
+        raise ValueError('Unknown ScriptPubKey')
