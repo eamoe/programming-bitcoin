@@ -1,6 +1,7 @@
 import unittest
 
 from Tests.block_test import *
+from Tests.bloom_filter_test import *
 from Tests.ecc_test import *
 from Tests.field_element_test import *
 from Tests.helper_test import *
