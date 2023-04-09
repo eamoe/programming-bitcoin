@@ -1,5 +1,37 @@
 # Bitcoin
 
+## Installation
+
+1. Activate virtual environment
+
+```
+virtualenv -p python3 .venv
+
+. .venv/bin/activate
+```
+
+2. Install requirements
+
+```
+pip install -r requirements.txt
+```
+
+3. Freeze requirements
+
+```
+pip freeze > requirements.txt
+```
+
+## Steps to uninstall
+
+```
+pip uninstall -r requirements.txt -y
+
+deactivate
+
+rm -r .venv/
+```
+
 ## Transactions
 
 At a high level, transaction has 4 components:
