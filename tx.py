@@ -214,25 +214,44 @@ class Tx:
         tx_in = self.tx_ins[input_index]
         # grab the previous ScriptPubKey
         script_pubkey = tx_in.script_pubkey(testnet=self.testnet)
-        # check to see if the ScriptPubkey is a p2sh using
-        # Script.is_p2sh_script_pubkey()
+        # check to see if the ScriptPubkey is a p2sh
         if script_pubkey.is_p2sh_script_pubkey():
-            # the last cmd in a p2sh is the RedeemScript
+            # the last cmd has to be the RedeemScript to trigger
             cmd = tx_in.script_sig.cmds[-1]
-            # prepend the length of the RedeemScript using encode_varint
-            raw_redeem = encode_varint(len(cmd)) + cmd
             # parse the RedeemScript
+            raw_redeem = int_to_little_endian(len(cmd), 1) + cmd
             redeem_script = Script.parse(BytesIO(raw_redeem))
-        # otherwise RedeemScript is None
+            # the RedeemScript might be p2wpkh or p2wsh
+            if redeem_script.is_p2wpkh_script_pubkey():
+                z = self.sig_hash_bip143(input_index, redeem_script)
+                witness = tx_in.witness
+            elif redeem_script.is_p2wsh_script_pubkey():
+                cmd = tx_in.witness[-1]
+                raw_witness = encode_varint(len(cmd)) + cmd
+                witness_script = Script.parse(BytesIO(raw_witness))
+                z = self.sig_hash_bip143(input_index, witness_script=witness_script)
+                witness = tx_in.witness
+            else:
+                z = self.sig_hash(input_index, redeem_script)
+                witness = None
         else:
-            redeem_script = None
-        # get the signature hash (z)
-        # pass the RedeemScript to the sig_hash method
-        z = self.sig_hash(input_index, redeem_script)
+            # ScriptPubkey might be a p2wpkh or p2wsh
+            if script_pubkey.is_p2wpkh_script_pubkey():
+                z = self.sig_hash_bip143(input_index)
+                witness = tx_in.witness
+            elif script_pubkey.is_p2wsh_script_pubkey():
+                cmd = tx_in.witness[-1]
+                raw_witness = encode_varint(len(cmd)) + cmd
+                witness_script = Script.parse(BytesIO(raw_witness))
+                z = self.sig_hash_bip143(input_index, witness_script=witness_script)
+                witness = tx_in.witness
+            else:
+                z = self.sig_hash(input_index)
+                witness = None
         # combine the current ScriptSig and the previous ScriptPubKey
         combined = tx_in.script_sig + script_pubkey
         # evaluate the combined script
-        return combined.evaluate(z)
+        return combined.evaluate(z, witness)
     
     def verify(self):
         '''Verify this transaction'''
